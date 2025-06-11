@@ -3,6 +3,8 @@ import json
 from datetime import datetime
 from bs4 import BeautifulSoup
 
+from utils import sort_layer_19_data, check_past_year_ppis
+
 def query_all_data():
     # Define the base URL for the query endpoint
     url = "https://gis.summitcountyco.gov/arcgis/rest/services/ParcelQueryTool/SummitMap1_Pro321/MapServer/19/query"
@@ -69,8 +71,6 @@ def main():
     with open("layer_19_data.json", "w") as f:
         json.dump(features, f, indent=2)
         print("\nData saved to 'layer_19_data.json'")
-
-
 
 if __name__ == "__main__":
     main()
