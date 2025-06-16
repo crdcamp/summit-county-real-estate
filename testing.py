@@ -3,11 +3,33 @@ import requests
 import json
 import urllib.parse
 
+def convert_timestamp_to_datetime(timestamp):
+    """Convert Unix timestamp (in milliseconds) to readable datetime string"""
+    if timestamp == 'N/A' or timestamp is None:
+        return 'N/A'
+    try:
+        # Convert milliseconds to seconds
+        timestamp_seconds = int(timestamp) / 1000
+        dt = datetime.fromtimestamp(timestamp_seconds)
+        return dt.strftime('%Y-%m-%d %H:%M:%S')
+    except (ValueError, TypeError, OSError):
+        return 'Invalid Date'
+
+def convert_timestamp_to_datetime_obj(timestamp):
+    """Convert Unix timestamp (in milliseconds) to datetime object for sorting"""
+    if timestamp == 'N/A' or timestamp is None:
+        return datetime.min  # Use minimum datetime for invalid dates to sort them last
+    try:
+        timestamp_seconds = int(timestamp) / 1000
+        return datetime.fromtimestamp(timestamp_seconds)
+    except (ValueError, TypeError, OSError):
+        return datetime.min
+
 # Example WHERE clause:
 # # SOURCE=1 AND MODDATE >= DATE '2025-01-01' AND MODDATE <= DATE '2025-12-31'
 
 # Calculate date range
-minutes = 43800
+minutes = 43200
 end_date = datetime.now()
 start_date = end_date - timedelta(minutes=minutes)
 
@@ -61,6 +83,12 @@ if layer_19_json_data and 'features' in layer_19_json_data:
         for feature in layer_19_json_data['features']
     }
     
+    # Convert timestamps to readable dates in the mapping
+    ppi_to_moddate_readable = {
+        ppi: convert_timestamp_to_datetime(timestamp)
+        for ppi, timestamp in ppi_to_moddate.items()
+    }
+    
     print(f"\nRetrieved {len(ppi_values)} PPI values from {start_date} to {end_date}\n")
 
     # Construct the WHERE clause with IN operator
@@ -112,11 +140,11 @@ if layer_19_json_data and 'features' in layer_19_json_data:
                 ppi = attributes.get('PPI')
                 
                 # Assign MODDATE from layer 19 if PPI matches
-                moddate = ppi_to_moddate.get(ppi, 'N/A')
+                moddate_readable = ppi_to_moddate_readable.get(ppi, 'N/A')
                 
-                # Add MODDATE to the full attributes
+                # Add readable MODDATE to the full attributes
                 attributes_with_moddate = attributes.copy()
-                attributes_with_moddate['MODDATE'] = moddate
+                attributes_with_moddate['MODDATE'] = moddate_readable
                 
                 url_list.append({
                     'url': url,
@@ -124,9 +152,16 @@ if layer_19_json_data and 'features' in layer_19_json_data:
                     'address': address,
                     'living_sqft': living_sqft,
                     'acres': acres,
-                    'moddate': moddate,
                     'full_attributes': attributes_with_moddate
                 })
+
+            # Sort url_list by MODDATE (most recent first)
+            url_list.sort(
+                key=lambda x: convert_timestamp_to_datetime_obj(
+                    ppi_to_moddate.get(x['full_attributes'].get('PPI'))
+                ),
+                reverse=True
+            )
 
             # Save url_list as JSON
             output_filename = f"layer_12_data_{start_date_str}_to_{end_date_str}.json"
@@ -134,10 +169,10 @@ if layer_19_json_data and 'features' in layer_19_json_data:
             try:
                 with open(output_filename, 'w', encoding='utf-8') as f:
                     json.dump(url_list, f, indent=2, ensure_ascii=False)
-                print(f"Successfully saved {len(url_list)} records to {output_filename}\n")
+                print(f"Successfully saved {len(url_list)} records to {output_filename} (sorted by most recent MODDATE)\n")
                 
                 # Print summary of MODDATE assignments
-                matched_count = sum(1 for item in url_list if item['moddate'] != 'N/A')
+                matched_count = sum(1 for item in url_list if item['full_attributes'].get('MODDATE') != 'N/A')
                 print(f"MODDATE assigned to {matched_count} out of {len(url_list)} records")
                 
             except Exception as e:
