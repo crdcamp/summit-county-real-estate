@@ -3,33 +3,22 @@ import requests
 import json
 import urllib.parse
 
-def convert_timestamp_to_datetime(timestamp):
-    """Convert Unix timestamp (in milliseconds) to readable datetime string"""
+def convert_timestamp_to_datetime_obj(timestamp, as_string=False):
+    """Convert Unix timestamp (in milliseconds) to datetime object or string"""
     if timestamp == 'N/A' or timestamp is None:
-        return 'N/A'
+        return 'N/A' if as_string else datetime.min
     try:
-        # Convert milliseconds to seconds
         timestamp_seconds = int(timestamp) / 1000
         dt = datetime.fromtimestamp(timestamp_seconds)
-        return dt.strftime('%Y-%m-%d %H:%M:%S')
+        return dt.strftime('%Y-%m-%d %H:%M:%S') if as_string else dt
     except (ValueError, TypeError, OSError):
-        return 'Invalid Date'
-
-def convert_timestamp_to_datetime_obj(timestamp):
-    """Convert Unix timestamp (in milliseconds) to datetime object for sorting"""
-    if timestamp == 'N/A' or timestamp is None:
-        return datetime.min  # Use minimum datetime for invalid dates to sort them last
-    try:
-        timestamp_seconds = int(timestamp) / 1000
-        return datetime.fromtimestamp(timestamp_seconds)
-    except (ValueError, TypeError, OSError):
-        return datetime.min
+        return 'Invalid Date' if as_string else datetime.min
 
 # Example WHERE clause:
 # # SOURCE=1 AND MODDATE >= DATE '2025-01-01' AND MODDATE <= DATE '2025-12-31'
 
 # Calculate date range
-minutes = 43200
+minutes = 525600
 end_date = datetime.now()
 start_date = end_date - timedelta(minutes=minutes)
 
@@ -85,7 +74,7 @@ if layer_19_json_data and 'features' in layer_19_json_data:
     
     # Convert timestamps to readable dates in the mapping
     ppi_to_moddate_readable = {
-        ppi: convert_timestamp_to_datetime(timestamp)
+        ppi: convert_timestamp_to_datetime_obj(timestamp, as_string=True)
         for ppi, timestamp in ppi_to_moddate.items()
     }
     
