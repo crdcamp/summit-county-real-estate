@@ -152,5 +152,19 @@ if layer_19_json_data and 'features' in layer_19_json_data:
 else:
     print("No features found in query results.")
 
-#import json
-#print(json.dumps(report_data, indent=2))
+import smtplib
+
+email = 'crdcamp@gmail.com'
+receiver_email = 'Johnvano@sweethomesinc.com'
+
+subject = 'TEST EMAIL'
+message = str(report_data).encode('ascii', 'ignore').decode('ascii')
+
+text = f"Subject: {subject}\n\n{message}"
+
+server = smtplib.SMTP("smtp.gmail.com", 587)
+server.starttls()
+
+server.login(email, "banj dtij crkf tsqb")
+
+server.sendmail(email, receiver_email, text)
