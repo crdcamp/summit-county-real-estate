@@ -1,16 +1,10 @@
 from datetime import datetime, timedelta
 import requests
 import json
-
-#https://gis.summitcountyco.gov/arcgis/rest/services/ParcelQueryTool/SummitMap1_Pro321/MapServer/19/query?where=SOURCE%3D1+AND+MODDATE+%3E%3D+DATE+%271900-01-01%27+AND+MODDATE+%3C%3D+DATE+%272050-12-31%27&text=&objectIds=&time=&timeRelation=esriTimeRelationOverlaps&geometry=&geometryType=esriGeometryEnvelope&inSR=&spatialRel=esriSpatialRelIntersects&distance=&units=esriSRUnit_Foot&relationParam=&outFields=OBJECTID%2C+PPI%2C+SOURCE%2C+MODDATE%2C+MODTYPE%2C+METHOD%2C+OPERATOR&returnGeometry=false&returnTrueCurves=false&maxAllowableOffset=&geometryPrecision=&outSR=&havingClause=&returnIdsOnly=false&returnCountOnly=false&orderByFields=MODDATE&groupByFieldsForStatistics=&outStatistics=&returnZ=false&returnM=false&gdbVersion=&historicMoment=&returnDistinctValues=false&resultOffset=&resultRecordCount=&returnExtentOnly=false&sqlFormat=none&datumTransformation=&parameterValues=&rangeValues=&quantizationParameters=&featureEncoding=esriDefault&f=pjson
-
-# WORKING QUERY!!!
-# SOURCE=1 AND MODDATE >= DATE '2024-01-01' AND MODDATE <= DATE '2025-12-31'
-
-import requests
-import json
-from datetime import datetime, timedelta
 import urllib.parse
+
+# Example WHERE clause:
+# # SOURCE=1 AND MODDATE >= DATE '2025-01-01' AND MODDATE <= DATE '2025-12-31'
 
 def query_by_minutes(minutes):
     # Calculate date range
@@ -49,27 +43,78 @@ def query_by_minutes(minutes):
     
     # Send request
     response = requests.get(url)
-    data = response.json()
-    
-    # Save response to file
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"parcel_query_{timestamp}.json"
-    
-    data_json = json.dump(data, f, indent=2)
-    
-    # Check for errors in response
-    if 'error' in data:
-        print(f"Error: {data['error']}")
+    data_json = response.json()  # This assigns the parsed JSON to data_json
+
+    return data_json
+
+def query_ppi_values():
+    # Query data
+    query_results = query_by_minutes(43800)
+
+    # Find PPI Values
+    if query_results and 'features' in query_results:
+        ppi_values = [feature['attributes']['PPI'] for feature in query_results['features']]
+        print(f"Retrieved {len(ppi_values)} PPI values")
+
+        # Construct the WHERE clause with IN operator
+        if ppi_values:
+            # Format PPI values as a comma-separated string with single quotes
+            ppi_list = ",".join(f"'{ppi}'" for ppi in ppi_values)
+            where_clause = f"PPI IN ({ppi_list})"
+            
+            # URL-encode the WHERE clause
+            import urllib.parse
+            encoded_where_clause = urllib.parse.quote(where_clause)
+
+            # Base URL for the query with specified outFields and f=pjson
+            base_url = (
+                "https://gis.summitcountyco.gov/arcgis/rest/services/ParcelQueryTool/SummitMap1_Pro321/MapServer/12/query"
+                "?text=&objectIds=&time=&timeRelation=esriTimeRelationOverlaps"
+                "&geometry=&geometryType=esriGeometryEnvelope&inSR=&spatialRel=esriSpatialRelIntersects"
+                "&distance=&units=esriSRUnit_Foot&relationParam="
+                "&outFields=PPI,Schedule,Filing,Phase,ShortDesc,HouseNum,FullStreet,StreetName,TownName,PostCode,FullAdd,TotAcres,SquareFeet,SqeFtLiving,BsmtType,GarageType,NumOfCars,GarSqFt,NumOfRms,NumBedRms,NumLofts,NumKitch,MasterBath,FullBath,TotBath"
+                "&returnGeometry=false&returnTrueCurves=false&maxAllowableOffset=&geometryPrecision=&outSR="
+                "&havingClause=&returnIdsOnly=false&returnCountOnly=false&orderByFields="
+                "&groupByFieldsForStatistics=&outStatistics=&returnZ=false&returnM=false"
+                "&gdbVersion=&historicMoment=&returnDistinctValues=false&resultOffset="
+                "&resultRecordCount=&returnExtentOnly=false&sqlFormat=none&datumTransformation="
+                "¶meterValues=&rangeValues=&quantizationParameters=&featureEncoding=esriDefault&f=pjson"
+            )
+
+            # Construct the full URL with the encoded WHERE clause
+            url = f"{base_url}&where={encoded_where_clause}"
+            print(f"Query URL: {url}")
+
+            # Optionally, make the HTTP request to fetch results
+            import requests
+            try:
+                response = requests.get(url)
+                response.raise_for_status()  # Raise an error for bad status codes
+                query_data = response.json()
+                print(f"Query successful, retrieved {len(query_data.get('features', []))} features")
+                return query_data
+            except requests.RequestException as e:
+                print(f"Error querying URL: {e}")
+                return None
+        else:
+            print("No PPI values found to query.")
+            return None
     else:
-        print(f"Query successful, retrieved {len(data.get('features', []))} records")
+        print("No features found in query results.")
+        return None
+    
+ppi_values = query_ppi_values()
 
-    print(data_json)
+def generate_schedule_urls():
+    schedule_values = [feature['attributes']['Schedule'] for feature in ppi_values['features']]
+    print(f'\n Schedule values:\n{schedule_values}')
+    
+    url_list = []
+    for schedule in schedule_values:
+        url = f'https://gis.summitcountyco.gov/map/DetailData.aspx?Schno={schedule}'
+        url_list.append(url)
+        print(url)
 
-# Example: Query for the last 43,800 minutes (~30 days)
-query_by_minutes(43800)
+generate_schedule_urls()
+    
 
-def query_by_ppi(query_result):
-    ppi_values = [feature['attributes']['PPI'] for feature in query_result['features']]
-
-    for ppi in ppi_values:
-        print(ppi)
