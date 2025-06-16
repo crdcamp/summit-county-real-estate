@@ -41,11 +41,26 @@ url = (
 # Send request
 response = requests.get(url)
 layer_19_json_data = response.json()
-#print(layer_19_json_data)
 
-# Find PPI Values
+# Save layer_19_json_data as JSON file
+layer_19_filename = f"layer_19_data_{start_date_str}_to_{end_date_str}.json"
+try:
+    with open(layer_19_filename, 'w', encoding='utf-8') as f:
+        json.dump(layer_19_json_data, f, indent=2, ensure_ascii=False)
+    print(f"Successfully saved layer 19 data to {layer_19_filename}")
+except Exception as e:
+    print(f"Error saving layer 19 JSON file: {e}")
+
+# Find PPI Values and create PPI to MODDATE mapping
 if layer_19_json_data and 'features' in layer_19_json_data:
     ppi_values = [feature['attributes']['PPI'] for feature in layer_19_json_data['features']]
+    
+    # Create mapping from PPI to MODDATE for later assignment
+    ppi_to_moddate = {
+        feature['attributes']['PPI']: feature['attributes']['MODDATE'] 
+        for feature in layer_19_json_data['features']
+    }
+    
     print(f"\nRetrieved {len(ppi_values)} PPI values from {start_date} to {end_date}\n")
 
     # Construct the WHERE clause with IN operator
@@ -82,7 +97,7 @@ if layer_19_json_data and 'features' in layer_19_json_data:
 
             #print(layer_12_json_data)
 
-            # Extract schedule values and property attributes - FIXED: iterate over features array
+            # Extract schedule values and property attributes with MODDATE assignment
             schedule_values = [feature['attributes']['Schedule'] for feature in layer_12_json_data['features']]
             property_attributes = [feature['attributes'] for feature in layer_12_json_data['features']]
             
@@ -94,6 +109,14 @@ if layer_19_json_data and 'features' in layer_19_json_data:
                 address = attributes.get('FullAdd', 'N/A')
                 living_sqft = attributes.get('SqeFtLiving', 'N/A')
                 acres = attributes.get('TotAcres', 'N/A')
+                ppi = attributes.get('PPI')
+                
+                # Assign MODDATE from layer 19 if PPI matches
+                moddate = ppi_to_moddate.get(ppi, 'N/A')
+                
+                # Add MODDATE to the full attributes
+                attributes_with_moddate = attributes.copy()
+                attributes_with_moddate['MODDATE'] = moddate
                 
                 url_list.append({
                     'url': url,
@@ -101,16 +124,22 @@ if layer_19_json_data and 'features' in layer_19_json_data:
                     'address': address,
                     'living_sqft': living_sqft,
                     'acres': acres,
-                    'full_attributes': attributes
+                    'moddate': moddate,
+                    'full_attributes': attributes_with_moddate
                 })
 
             # Save url_list as JSON
-            output_filename = f"property_data_{start_date_str}_to_{end_date_str}.json"
+            output_filename = f"layer_12_data_{start_date_str}_to_{end_date_str}.json"
 
             try:
                 with open(output_filename, 'w', encoding='utf-8') as f:
                     json.dump(url_list, f, indent=2, ensure_ascii=False)
                 print(f"Successfully saved {len(url_list)} records to {output_filename}\n")
+                
+                # Print summary of MODDATE assignments
+                matched_count = sum(1 for item in url_list if item['moddate'] != 'N/A')
+                print(f"MODDATE assigned to {matched_count} out of {len(url_list)} records")
+                
             except Exception as e:
                 print(f"Error saving JSON file: {e}")
 
