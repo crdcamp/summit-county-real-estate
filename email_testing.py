@@ -152,10 +152,19 @@ if layer_19_json_data and 'features' in layer_19_json_data:
 else:
     print("No features found in query results.")
 
+
 import smtplib
+import os
+from dotenv import load_dotenv
+
+# Format JSON data for email
+
+
+# Load environment variables first
+load_dotenv()
 
 email = 'crdcamp@gmail.com'
-receiver_email = 'Johnvano@sweethomesinc.com'
+receiver_email = 'crdcamp@gmail.com'
 
 subject = 'TEST EMAIL'
 message = str(report_data).encode('ascii', 'ignore').decode('ascii')
@@ -165,6 +174,7 @@ text = f"Subject: {subject}\n\n{message}"
 server = smtplib.SMTP("smtp.gmail.com", 587)
 server.starttls()
 
-server.login(email, "banj dtij crkf tsqb")
+# Get the password from environment variable
+server.login(email, os.getenv('EMAIL_PASSWORD'))
 
 server.sendmail(email, receiver_email, text)

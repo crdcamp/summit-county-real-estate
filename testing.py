@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import requests
 import json
 import urllib.parse
+from dotenv import load_dotenv
 
 def convert_timestamp_to_datetime_obj(timestamp, as_string=False):
     """Convert Unix timestamp (in milliseconds) to datetime object or string"""
