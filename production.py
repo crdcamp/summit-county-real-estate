@@ -46,7 +46,7 @@ layer_19_json_data = response.json()
 # Find PPI Values
 if layer_19_json_data and 'features' in layer_19_json_data:
     ppi_values = [feature['attributes']['PPI'] for feature in layer_19_json_data['features']]
-    print(f"Retrieved {len(ppi_values)} PPI values from {start_date} to {end_date}\n")
+    print(f"\nRetrieved {len(ppi_values)} PPI values from {start_date} to {end_date}\n")
 
     # Construct the WHERE clause with IN operator
     if ppi_values:
@@ -82,16 +82,37 @@ if layer_19_json_data and 'features' in layer_19_json_data:
 
             #print(layer_12_json_data)
 
-            # Extract schedule values and generate URLs - moved inside the if block
+            # Extract schedule values and property attributes - FIXED: iterate over features array
             schedule_values = [feature['attributes']['Schedule'] for feature in layer_12_json_data['features']]
+            property_attributes = [feature['attributes'] for feature in layer_12_json_data['features']]
+            
             print(f"Retrieved {len(schedule_values)} Schedules from {start_date} to {end_date}\n")
 
             url_list = []
-            print('URL Links:')
-            for schedule in schedule_values:
+            for schedule, attributes in zip(schedule_values, property_attributes):
                 url = f'https://gis.summitcountyco.gov/map/DetailData.aspx?Schno={schedule}'
-                url_list.append(url)
-                print(url)
+                address = attributes.get('FullAdd', 'N/A')
+                living_sqft = attributes.get('SqeFtLiving', 'N/A')
+                acres = attributes.get('TotAcres', 'N/A')
+                
+                url_list.append({
+                    'url': url,
+                    'schedule': schedule,
+                    'address': address,
+                    'living_sqft': living_sqft,
+                    'acres': acres,
+                    'full_attributes': attributes
+                })
+
+            # Save url_list as JSON
+            output_filename = f"property_data_{start_date_str}_to_{end_date_str}.json"
+
+            try:
+                with open(output_filename, 'w', encoding='utf-8') as f:
+                    json.dump(url_list, f, indent=2, ensure_ascii=False)
+                print(f"Successfully saved {len(url_list)} records to {output_filename}\n")
+            except Exception as e:
+                print(f"Error saving JSON file: {e}")
 
         except requests.RequestException as e:
             print(f"Error querying URL: {e}")
