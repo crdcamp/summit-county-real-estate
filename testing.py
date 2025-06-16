@@ -120,7 +120,7 @@ if layer_19_json_data and 'features' in layer_19_json_data:
             
             print(f"Retrieved {len(schedule_values)} Schedules from {start_date} to {end_date}\n")
 
-            url_list = []
+            report_data = []
             for schedule, attributes in zip(schedule_values, property_attributes):
                 url = f'https://gis.summitcountyco.gov/map/DetailData.aspx?Schno={schedule}'
                 address = attributes.get('FullAdd', 'N/A')
@@ -135,7 +135,7 @@ if layer_19_json_data and 'features' in layer_19_json_data:
                 attributes_with_moddate = attributes.copy()
                 attributes_with_moddate['MODDATE'] = moddate_readable
                 
-                url_list.append({
+                report_data.append({
                     'url': url,
                     'schedule': schedule,
                     'address': address,
@@ -144,25 +144,25 @@ if layer_19_json_data and 'features' in layer_19_json_data:
                     'full_attributes': attributes_with_moddate
                 })
 
-            # Sort url_list by MODDATE (most recent first)
-            url_list.sort(
+            # Sort report_data by MODDATE (most recent first)
+            report_data.sort(
                 key=lambda x: convert_timestamp_to_datetime_obj(
                     ppi_to_moddate.get(x['full_attributes'].get('PPI'))
                 ),
                 reverse=True
             )
 
-            # Save url_list as JSON
+            # Save report_data as JSON
             output_filename = f"layer_12_data_{start_date_str}_to_{end_date_str}.json"
 
             try:
                 with open(output_filename, 'w', encoding='utf-8') as f:
-                    json.dump(url_list, f, indent=2, ensure_ascii=False)
-                print(f"Successfully saved {len(url_list)} records to {output_filename} (sorted by most recent MODDATE)\n")
+                    json.dump(report_data, f, indent=2, ensure_ascii=False)
+                print(f"Successfully saved {len(report_data)} records to {output_filename} (sorted by most recent MODDATE)\n")
                 
                 # Print summary of MODDATE assignments
-                matched_count = sum(1 for item in url_list if item['full_attributes'].get('MODDATE') != 'N/A')
-                print(f"MODDATE assigned to {matched_count} out of {len(url_list)} records")
+                matched_count = sum(1 for item in report_data if item['full_attributes'].get('MODDATE') != 'N/A')
+                print(f"MODDATE assigned to {matched_count} out of {len(report_data)} records")
                 
             except Exception as e:
                 print(f"Error saving JSON file: {e}")

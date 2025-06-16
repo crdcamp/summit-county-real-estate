@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import requests
-import json
 import urllib.parse
 
 def convert_timestamp_to_datetime_obj(timestamp, as_string=False):
@@ -53,15 +52,6 @@ url = (
 response = requests.get(url)
 layer_19_json_data = response.json()
 
-# Save layer_19_json_data as JSON file
-layer_19_filename = f"layer_19_data_{start_date_str}_to_{end_date_str}.json"
-try:
-    with open(layer_19_filename, 'w', encoding='utf-8') as f:
-        json.dump(layer_19_json_data, f, indent=2, ensure_ascii=False)
-    print(f"Successfully saved layer 19 data to {layer_19_filename}")
-except Exception as e:
-    print(f"Error saving layer 19 JSON file: {e}")
-
 # Find PPI Values and create PPI to MODDATE mapping
 if layer_19_json_data and 'features' in layer_19_json_data:
     ppi_values = [feature['attributes']['PPI'] for feature in layer_19_json_data['features']]
@@ -104,7 +94,6 @@ if layer_19_json_data and 'features' in layer_19_json_data:
 
         # Construct the full URL with the encoded WHERE clause
         url = f"{base_url}&where={encoded_where_clause}"
-        #print(f"Query URL: {url}")
 
         # Optionally, make the HTTP request to fetch results
         try:
@@ -112,15 +101,13 @@ if layer_19_json_data and 'features' in layer_19_json_data:
             response.raise_for_status()  # Raise an error for bad status codes
             layer_12_json_data = response.json()
 
-            #print(layer_12_json_data)
-
             # Extract schedule values and property attributes with MODDATE assignment
             schedule_values = [feature['attributes']['Schedule'] for feature in layer_12_json_data['features']]
             property_attributes = [feature['attributes'] for feature in layer_12_json_data['features']]
             
             print(f"Retrieved {len(schedule_values)} Schedules from {start_date} to {end_date}\n")
 
-            url_list = []
+            report_data = []
             for schedule, attributes in zip(schedule_values, property_attributes):
                 url = f'https://gis.summitcountyco.gov/map/DetailData.aspx?Schno={schedule}'
                 address = attributes.get('FullAdd', 'N/A')
@@ -135,7 +122,7 @@ if layer_19_json_data and 'features' in layer_19_json_data:
                 attributes_with_moddate = attributes.copy()
                 attributes_with_moddate['MODDATE'] = moddate_readable
                 
-                url_list.append({
+                report_data.append({
                     'url': url,
                     'schedule': schedule,
                     'address': address,
@@ -144,28 +131,19 @@ if layer_19_json_data and 'features' in layer_19_json_data:
                     'full_attributes': attributes_with_moddate
                 })
 
-            # Sort url_list by MODDATE (most recent first)
-            url_list.sort(
+            # Sort report_data by MODDATE (most recent first)
+            report_data.sort(
                 key=lambda x: convert_timestamp_to_datetime_obj(
                     ppi_to_moddate.get(x['full_attributes'].get('PPI'))
                 ),
                 reverse=True
             )
 
-            # Save url_list as JSON
-            output_filename = f"layer_12_data_{start_date_str}_to_{end_date_str}.json"
-
-            try:
-                with open(output_filename, 'w', encoding='utf-8') as f:
-                    json.dump(url_list, f, indent=2, ensure_ascii=False)
-                print(f"Successfully saved {len(url_list)} records to {output_filename} (sorted by most recent MODDATE)\n")
-                
-                # Print summary of MODDATE assignments
-                matched_count = sum(1 for item in url_list if item['full_attributes'].get('MODDATE') != 'N/A')
-                print(f"MODDATE assigned to {matched_count} out of {len(url_list)} records")
-                
-            except Exception as e:
-                print(f"Error saving JSON file: {e}")
+            print(f"Successfully processed {len(report_data)} records (sorted by most recent MODDATE)\n")
+            
+            # Print summary of MODDATE assignments
+            matched_count = sum(1 for item in report_data if item['full_attributes'].get('MODDATE') != 'N/A')
+            print(f"MODDATE assigned to {matched_count} out of {len(report_data)} records")
 
         except requests.RequestException as e:
             print(f"Error querying URL: {e}")
@@ -173,3 +151,7 @@ if layer_19_json_data and 'features' in layer_19_json_data:
         print("No PPI values found to query.")
 else:
     print("No features found in query results.")
+
+import json
+# To print the raw layer_12_json_data:
+print(json.dumps(report_data, indent=2))
