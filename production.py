@@ -379,7 +379,7 @@ def send_html_email(report_data, start_date, end_date):
 # Main execution code
 def main():
     # Calculate date range
-    minutes = 43800
+    minutes = 30
     end_date = datetime.now()
     start_date = end_date - timedelta(minutes=minutes)
 
