@@ -39,7 +39,6 @@ def format_real_estate_email_report(report_data):
     <style>
         body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; }
         .header { background-color: #2c5aa0; color: white; padding: 20px; text-align: center; }
-        .summary { background-color: #f8f9fa; padding: 15px; margin: 20px 0; border-left: 4px solid #2c5aa0; }
         .property { border: 1px solid #ddd; margin: 15px 0; padding: 15px; border-radius: 5px; }
         .property-header { background-color: #e9ecef; padding: 10px; margin: -15px -15px 10px -15px; border-radius: 5px 5px 0 0; }
         .property-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 10px 0; }
@@ -54,41 +53,6 @@ def format_real_estate_email_report(report_data):
     <div class="header">
         <h1>Summit County Real Estate Report</h1>
         <p>Property Data Summary - Recent Updates</p>
-    </div>
-"""
-    
-    # Calculate summary statistics
-    total_properties = len(report_data)
-    properties_with_homes = sum(1 for prop in report_data if (prop.get('living_sqft', 0) or 0) > 0)
-    total_acres = sum(prop.get('acres', 0) or 0 for prop in report_data)
-    total_living_sqft = sum(prop.get('living_sqft', 0) or 0 for prop in report_data)
-    
-    # Group by town
-    town_counts = {}
-    for prop in report_data:
-        town = prop.get('full_attributes', {}).get('TownName', 'Unknown').strip()
-        town_counts[town] = town_counts.get(town, 0) + 1
-    
-    # Summary section
-    email_content += f"""
-    <div class="summary">
-        <h2>Executive Summary</h2>
-        <div class="property-grid">
-            <div><span class="label">Total Properties:</span> {total_properties:,}</div>
-            <div><span class="label">Properties with Structures:</span> {properties_with_homes:,}</div>
-            <div><span class="label">Total Acreage:</span> {total_acres:,.2f} acres</div>
-            <div><span class="label">Total Living Space:</span> {total_living_sqft:,} sq ft</div>
-        </div>
-        
-        <h3>Properties by Location</h3>
-        <ul>
-"""
-    
-    for town, count in sorted(town_counts.items()):
-        email_content += f"            <li><strong>{town}:</strong> {count} properties</li>\n"
-    
-    email_content += """
-        </ul>
     </div>
     
     <h2>Property Details</h2>
@@ -496,7 +460,7 @@ if __name__ == "__main__":
     
                 # Send formatted email
                 email = 'crdcamp@gmail.com'
-                receiver_email = 'Johnvano@sweethomesinc.com'
+                receiver_email = 'crdcamp@gmail.com'
                 
                 if report_data:
                     print(f"\n📧 Sending formatted email report...")
