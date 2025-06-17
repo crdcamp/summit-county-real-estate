@@ -3,6 +3,7 @@ import requests
 import urllib.parse
 import smtplib
 import os
+import json
 from dotenv import load_dotenv
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -333,6 +334,20 @@ def create_html_email(report_data, start_date, end_date):
     
     return html
 
+def save_html_report(html_content, start_date, end_date):
+    """Save HTML content to a file"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f'summit_county_property_report_{timestamp}.html'
+    
+    try:
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+        print(f"💾 HTML report saved as {filename}")
+        return filename
+    except Exception as e:
+        print(f"❌ Error saving HTML report: {e}")
+        return None
+
 def send_html_email(report_data, start_date, end_date):
     """Send HTML formatted email with property data"""
     
@@ -350,6 +365,9 @@ def send_html_email(report_data, start_date, end_date):
     
     # Create HTML content
     html_content = create_html_email(report_data, start_date, end_date)
+    
+    # Save HTML content to file
+    save_html_report(html_content, start_date, end_date)
     
     # Create message
     msg = MIMEMultipart('alternative')
@@ -509,9 +527,19 @@ def main():
                 matched_count = sum(1 for item in report_data if item['full_attributes'].get('MODDATE') != 'N/A')
                 print(f"📅 MODDATE assigned to {matched_count} out of {len(report_data)} records")
 
-                # Send HTML email
+                # Save report_data to JSON file
                 if report_data:
-                    print("📧 Sending HTML email...")
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f'property_report_data_{timestamp}.json'
+                    
+                    with open(filename, 'w') as f:
+                        json.dump(report_data, f, indent=2, default=str)
+                    
+                    print(f"💾 Saved {len(report_data)} records to {filename}")
+
+                # Send HTML email and save HTML report
+                if report_data:
+                    print("📧 Sending HTML email and saving HTML report...")
                     send_html_email(report_data, start_date, end_date)
                 else:
                     print("❌ No data to send in email")
@@ -524,4 +552,4 @@ def main():
         print("❌ No features found in layer 19 query results")
 
 if __name__ == "__main__":
-    main()  
+    main()

@@ -3,6 +3,7 @@ import requests
 import urllib.parse
 import smtplib
 import os
+import json
 from dotenv import load_dotenv
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -341,7 +342,7 @@ def send_html_email(report_data, start_date, end_date):
     
     # Email configuration
     sender_email = 'crdcamp@gmail.com'
-    receiver_email = 'crdcamp@gmail.com'
+    receiver_email = 'Johnvano@sweethomesinc.com'
     password = os.getenv('EMAIL_PASSWORD')
     
     if not password:
@@ -379,7 +380,7 @@ def send_html_email(report_data, start_date, end_date):
 # Main execution code
 def main():
     # Calculate date range
-    minutes = 544320
+    minutes = 43800 
     end_date = datetime.now()
     start_date = end_date - timedelta(minutes=minutes)
 
@@ -509,6 +510,16 @@ def main():
                 matched_count = sum(1 for item in report_data if item['full_attributes'].get('MODDATE') != 'N/A')
                 print(f"📅 MODDATE assigned to {matched_count} out of {len(report_data)} records")
 
+                # Save report_data to JSON file
+                if report_data:
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f'property_report_data_{timestamp}.json'
+                    
+                    with open(filename, 'w') as f:
+                        json.dump(report_data, f, indent=2, default=str)
+                    
+                    print(f"💾 Saved {len(report_data)} records to {filename}")
+
                 # Send HTML email
                 if report_data:
                     print("📧 Sending HTML email...")
@@ -524,4 +535,4 @@ def main():
         print("❌ No features found in layer 19 query results")
 
 if __name__ == "__main__":
-    main()  
+    main()
