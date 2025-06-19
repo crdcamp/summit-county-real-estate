@@ -53,7 +53,7 @@ def create_html_email(report_data, start_date, end_date):
                 background-color: #f5f5f5;
             }}
             .header {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
                 color: white;
                 padding: 30px;
                 border-radius: 10px;
@@ -78,7 +78,7 @@ def create_html_email(report_data, start_date, end_date):
                 overflow: hidden;
             }}
             .property-header {{
-                background: #667eea;
+                background: #404040;
                 color: white;
                 padding: 20px;
             }}
@@ -104,14 +104,14 @@ def create_html_email(report_data, start_date, end_date):
                 gap: 20px;
             }}
             .detail-section {{
-                background: #f8f9ff;
+                background: #f8f8f8;
                 padding: 15px;
                 border-radius: 8px;
-                border-left: 3px solid #667eea;
+                border-left: 3px solid #666;
             }}
             .detail-section h4 {{
                 margin: 0 0 15px 0;
-                color: #667eea;
+                color: #333;
                 font-size: 16px;
                 border-bottom: 1px solid #ddd;
                 padding-bottom: 8px;
@@ -123,7 +123,7 @@ def create_html_email(report_data, start_date, end_date):
                 padding: 5px 0;
             }}
             .detail-row:nth-child(even) {{
-                background: rgba(102, 126, 234, 0.05);
+                background: rgba(0, 0, 0, 0.05);
                 margin-left: -10px;
                 margin-right: -10px;
                 padding-left: 10px;
@@ -142,7 +142,7 @@ def create_html_email(report_data, start_date, end_date):
             }}
             .view-link {{
                 display: inline-block;
-                background: #28a745;
+                background: #333;
                 color: white;
                 padding: 10px 20px;
                 text-decoration: none;
@@ -151,10 +151,10 @@ def create_html_email(report_data, start_date, end_date):
                 font-weight: 600;
             }}
             .view-link:hover {{
-                background: #218838;
+                background: #555;
             }}
             .footer {{
-                background: #333;
+                background: #1a1a1a;
                 color: white;
                 padding: 20px;
                 text-align: center;
@@ -166,7 +166,7 @@ def create_html_email(report_data, start_date, end_date):
     <body>
         <div class="header">
             <h1>Summit County Property Data Report</h1>
-            <p>Property modifications from {start_date.strftime('%B %d, %Y')} to {end_date.strftime('%B %d, %Y')}</p>
+            <p>Property modifications from {start_date.strftime('%B %d, %Y')}</p>
             <p>Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}</p>
         </div>
     """
@@ -379,7 +379,7 @@ def send_html_email(report_data, start_date, end_date):
 # Main execution code
 def main():
     # Calculate date range
-    minutes = 30
+    minutes = 56000
     end_date = datetime.now()
     start_date = end_date - timedelta(minutes=minutes)
 
