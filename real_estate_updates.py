@@ -340,8 +340,8 @@ def send_html_email(report_data, start_date, end_date):
     load_dotenv()
     
     # Email configuration
-    sender_email = 'crdcamp@gmail.com'
-    receiver_email = 'crdcamp@gmail.com' #'Johnvano@sweethomesinc.com'
+    sender_email = os.getenv('SENDER_EMAIL')
+    receiver_email = os.getenv('RECEIVER_EMAIL')
     password = os.getenv('EMAIL_PASSWORD')
     
     if not password:
@@ -379,7 +379,7 @@ def send_html_email(report_data, start_date, end_date):
 # Main execution code
 def main():
     # Calculate date range
-    minutes = 56000
+    minutes = 30
     end_date = datetime.now()
     start_date = end_date - timedelta(minutes=minutes)
 
